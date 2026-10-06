@@ -8,6 +8,28 @@ page 57800 "BCB Perf. Benchmark"
     {
         area(Processing)
         {
+            group(CreateData)
+            {
+                Caption = 'Create Data';
+
+                action(CreateItems)
+                {
+                    Caption = 'Create Items';
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    var
+                        Item: Record Item;
+                        ItemsAlreadyCreatedQst: Label 'Items have already been created in this company. Do you want to continue?';
+                    begin
+                        if Item.Count() > 1000 then
+                            if not Confirm(ItemsAlreadyCreatedQst) then
+                                exit;
+
+                        TestDataGenerator.CreateItems(1000);
+                    end;
+                }
+            }
             group(RunTests)
             {
                 Caption = 'Run Tests';
@@ -15,6 +37,7 @@ page 57800 "BCB Perf. Benchmark"
                 action(GenJournalPosting)
                 {
                     Caption = 'Gen. Journal Posting';
+                    ApplicationArea = All;
 
                     trigger OnAction()
                     begin
@@ -24,42 +47,51 @@ page 57800 "BCB Perf. Benchmark"
                 action(ItemJournalPosting)
                 {
                     Caption = 'Item Journal Posting';
+                    ApplicationArea = All;
 
                     trigger OnAction()
-                    var
-                        InventorySetup: Record "Inventory Setup";
                     begin
-                        InventorySetup.Get();
-                        InventorySetup.Validate("Automatic Cost Posting", true);
-                        InventorySetup.Validate("Automatic Cost Adjustment", Enum::"Automatic Cost Adjustment Type"::Always);
-                        InventorySetup.Modify();
-
                         PerfBenchTests.RunTest('ITEMJNLPOST', Codeunit::"BCB Item Jnl. Posting - Init", Codeunit::"BCB Item Jnl. Posting - Run");
-                    end;
-                }
-                action(ItemJournalPostingNoCostInGL)
-                {
-                    Caption = 'Item Journal Posting - No cost in G/L';
-
-                    trigger OnAction()
-                    var
-                        InventorySetup: Record "Inventory Setup";
-                    begin
-                        InventorySetup.Get();
-                        InventorySetup.Validate("Automatic Cost Posting", false);
-                        InventorySetup.Validate("Automatic Cost Adjustment", Enum::"Automatic Cost Adjustment Type"::Never);
-                        InventorySetup.Modify();
-
-                        PerfBenchTests.RunTest('ITEMJNLNOCOST', Codeunit::"BCB Item Jnl. Posting - Init", Codeunit::"BCB Item Jnl. Posting - Run");
                     end;
                 }
                 action(SalesOrderPosting)
                 {
                     Caption = 'Sales Order Posting';
+                    ApplicationArea = All;
 
                     trigger OnAction()
                     begin
                         PerfBenchTests.RunTest('SALESORDERPOST', Codeunit::"BCB Sales Order Posting - Init", Codeunit::"BCB Sales Order Posting - Run");
+                    end;
+                }
+                action(PurchOrderPosting)
+                {
+                    Caption = 'Purch Order Posting';
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        PerfBenchTests.RunTest('PURCHORDERPOST', Codeunit::"BCB Purch Order Posting - Init", Codeunit::"BCB Purch. Order Posting - Run");
+                    end;
+                }
+                action(GenJnlParallelPosting)
+                {
+                    Caption = 'Gen. Jnl. - Parallel Posting';
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        PerfBenchTests.RunGenJnlParallelPostingTest('GENJNL_PARALLEL_POST', 10, 100);
+                    end;
+                }
+                action(itemJnlParallelPosting)
+                {
+                    Caption = 'Item Jnl. - Parallel Posting';
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        PerfBenchTests.RunItemJnlParallelPostingTest('ITEMJ_PARALLEL_POST', 10, 100);
                     end;
                 }
             }
@@ -68,4 +100,5 @@ page 57800 "BCB Perf. Benchmark"
 
     var
         PerfBenchTests: Codeunit "BCB Perf. Bench Tests";
+        TestDataGenerator: Codeunit "BCB Test Data Generator";
 }

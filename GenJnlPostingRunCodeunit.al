@@ -1,13 +1,26 @@
 codeunit 57801 "BCB Gen. Jnl. Posting - Run"
 {
+    TableNo = "Gen. Journal Line";
+
     trigger OnRun()
     begin
-        RunTest();
+        RunTest(Rec);
     end;
 
-    procedure RunTest()
+    procedure RunTest(GenJournalLine: Record "Gen. Journal Line")
+    var
+        JnlTemplateName: Code[10];
+        JnlBatchName: Code[10];
     begin
-        PostGenJournalBatch(TestDataGenerator.GetGeneralJournalTemplateName(), TestDataGenerator.GetGeneralJournalBatchName());
+        JnlTemplateName := GenJournalLine."Journal Template Name";
+        JnlBatchName := GenJournalLine."Journal Batch Name";
+    
+        if (JnlTemplateName = '') or (JnlBatchName = '') then begin
+            JnlTemplateName := TestDataGenerator.GetGeneralJournalTemplateName();
+            JnlBatchName := TestDataGenerator.GetGeneralJournalBatchName();
+        end;
+
+        PostGenJournalBatch(JnlTemplateName, JnlBatchName);
     end;
 
     procedure PostGenJournalBatch(TemplateName: Code[10]; BatchName: Code[10])

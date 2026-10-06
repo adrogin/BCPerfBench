@@ -34,6 +34,24 @@ codeunit 57802 "BCB Perf. Bench Tests"
         PerfTestResult.Insert(true);
     end;
 
+    procedure SaveParallelSessionResult(TestCode: Code[20]; IterationNo: Integer; StartTime: Time; EndTime: Time; IsSuccess: Boolean)
+    var
+        PerfParallelTestResult: Record "BCB Perf. Parallel Test Result";
+    begin
+        PerfParallelTestResult.Validate("Test Code", TestCode);
+        PerfParallelTestResult.Validate("Iteration No.", IterationNo);
+        PerfParallelTestResult.Validate("Session ID", SessionId());
+        PerfParallelTestResult.Validate("Start Time", StartTime);
+        PerfParallelTestResult.Validate("End Time", EndTime);
+        PerfParallelTestResult.Validate("Is Success", IsSuccess);
+
+        if not IsSuccess then begin
+            PerfParallelTestResult.Validate("Error Text", CopyStr(GetLastErrorText(), 1, MaxStrLen(PerfParallelTestResult."Error Text")));
+            PerfParallelTestResult.Validate("Error Call Stack", CopyStr(GetLastErrorCallStack, 1, MaxStrLen(PerfParallelTestResult."Error Call Stack")));
+        end;
+        PerfParallelTestResult.Insert(true);
+    end;
+
     local procedure ClearTestResult(TestCode: Code[20])
     var
         PerfTestResult: Record "BCB Perf. Test Result";
@@ -41,4 +59,97 @@ codeunit 57802 "BCB Perf. Bench Tests"
         PerfTestResult.SetRange("Test Code", TestCode);
         PerfTestResult.DeleteAll();
     end;
+
+    local procedure ClearParallelTestResult(TestCode: Code[20])
+    var
+        PerfParallelTestResult: Record "BCB Perf. Parallel Test Result";
+    begin
+        PerfParallelTestResult.SetRange("Test Code", TestCode);
+        PerfParallelTestResult.DeleteAll();
+    end;
+
+    procedure RunGenJnlParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerSession: Integer)
+    var
+        JnlBatchNames: List of [Code[20]];
+    begin
+        ClearParallelTestResult(TestCode);
+        InitializeGenJnlParallelPostingTest(JnlBatchNames, NoOfSessions, LinesPerSession);
+        StartGenJnlPostingTasks(JnlBatchNames);
+    end;
+
+    local procedure InitializeGenJnlParallelPostingTest(var JnlBatchNames: List of [Code[20]]; NoOfSessions: Integer; LinesPerSession: Integer)
+    var
+        I: Integer;
+        JnlBatchName: Code[10];
+    begin
+        TestDataGenerator.CreateGenJnlDocNoSeriesIfNotExists();
+
+        for I := 1 to NoOfSessions do begin
+            JnlBatchName := 'BGPOST' + Format(I).PadLeft(4, '0');
+            TestDataGenerator.DeleteGenJournalLines(JnlBatchName);
+            TestDataGenerator.CreateGenJournalLines(LinesPerSession, JnlBatchName);
+            JnlBatchNames.Add(JnlBatchName);
+        end;
+    end;
+
+    local procedure StartGenJnlPostingTasks(JnlBatchNames: List of [Code[20]])
+    var
+        BatchName: Code[20];
+    begin
+        foreach BatchName in JnlBatchNames do
+            StartGenJnlBackgroundPostingSession(BatchName);
+    end;
+
+    procedure RunItemJnlParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerSession: Integer)
+    var
+        JnlBatchNames: List of [Code[20]];
+    begin
+        ClearParallelTestResult(TestCode);
+        InitializeItemJnlParallelPostingTest(JnlBatchNames, NoOfSessions, LinesPerSession);
+        StartItemJnlPostingTasks(JnlBatchNames);
+    end;
+
+    local procedure InitializeItemJnlParallelPostingTest(var JnlBatchNames: List of [Code[20]]; NoOfSessions: Integer; LinesPerSession: Integer)
+    var
+        I: Integer;
+        JnlBatchName: Code[10];
+    begin
+        TestDataGenerator.CreateItemJnlDocNoSeriesIfNotExists();
+
+        for I := 1 to NoOfSessions do begin
+            JnlBatchName := 'BGPOST' + Format(I).PadLeft(4, '0');
+            TestDataGenerator.DeleteItemJournalLines(JnlBatchName);
+            TestDataGenerator.CreateItemJournalLines(LinesPerSession, JnlBatchName);
+            JnlBatchNames.Add(JnlBatchName);
+        end;
+    end;
+
+    local procedure StartItemJnlPostingTasks(JnlBatchNames: List of [Code[20]])
+    var
+        BatchName: Code[20];
+    begin
+        foreach BatchName in JnlBatchNames do
+            StartItemJnlBackgroundPostingSession(BatchName);
+    end;
+
+    local procedure StartGenJnlBackgroundPostingSession(JnlBatchName: Code[20])
+    var
+        GenJournalBatch: Record "Gen. Journal Batch";
+        SessionId: Integer;
+    begin
+        GenJournalBatch.Get(TestDataGenerator.GetGeneralJournalTemplateName(), JnlBatchName);
+        StartSession(SessionId, Codeunit::"BCB Gen. Jnl. Parallel Post", CompanyName, GenJournalBatch);
+    end;
+
+    local procedure StartItemJnlBackgroundPostingSession(JnlBatchName: Code[20])
+    var
+        ItemJournalBatch: Record "Item Journal Batch";
+        SessionId: Integer;
+    begin
+        ItemJournalBatch.Get(TestDataGenerator.GetItemJournalTemplateName(), JnlBatchName);
+        StartSession(SessionId, Codeunit::"BCB Item Jnl. Parallel Post", CompanyName, ItemJournalBatch);
+    end;
+
+    var
+        TestDataGenerator: Codeunit "BCB Test Data Generator";
 }

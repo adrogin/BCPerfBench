@@ -7,6 +7,7 @@ codeunit 57806 "BCB Sales Order Posting - Init"
 
     procedure Initialize()
     begin
+        TestDataGenerator.SetDefaultInventorySetup();
         TestDataGenerator.CreateSalesOrder(1000);
     end;
 

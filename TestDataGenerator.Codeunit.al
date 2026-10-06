@@ -1,6 +1,23 @@
 codeunit 57803 "BCB Test Data Generator"
 {
+    procedure CreateGenJnlBatch(BatchName: Code[10])
+    var
+        GenJournalBatch: Record "Gen. Journal Batch";
+    begin
+        if GenJournalBatch.Get(GetGeneralJournalTemplateName(), BatchName) then
+            exit;
+
+        GenJournalBatch.Validate("Journal Template Name", GetGeneralJournalTemplateName());
+        GenJournalBatch.Validate(Name, BatchName);
+        GenJournalBatch.Insert(true);
+    end;
+
     procedure CreateGenJournalLines(NoOfLines: Integer)
+    begin
+        CreateGenJournalLines(NoOfLines, GetGeneralJournalBatchName());
+    end;
+
+    procedure CreateGenJournalLines(NoOfLines: Integer; JnlBatchName: Code[10])
     var
         TempGLAccount: Record "G/L Account" temporary;
         GenJournalLine: Record "Gen. Journal Line";
@@ -8,17 +25,19 @@ codeunit 57803 "BCB Test Data Generator"
         Balance: Decimal;
         I: Integer;
     begin
+        CreateGenJnlBatch(JnlBatchName);
         DocumentNo := GetGenJnlDocumentNo();
         for I := 1 to NoOfLines do begin
-            CreateGenJournalLine(GenJournalLine, DocumentNo, I, TempGLAccount);
+            CreateGenJournalLine(GenJournalLine, JnlBatchName, DocumentNo, I, TempGLAccount);
             Balance += GenJournalLine.Amount;
         end;
 
-        CreateGenJournalLine(GenJournalLine, DocumentNo, -Balance, I + 1, TempGLAccount);
+        CreateGenJournalLine(GenJournalLine, JnlBatchName, DocumentNo, -Balance, I + 1, TempGLAccount);
     end;
 
     procedure CreateGenJournalLine(
         var GenJournalLine: Record "Gen. Journal Line";
+        JnlBatchName: Code[10];
         DocumentNo: Code[20];
         LineNo: Integer;
         var TempGLAccount: Record "G/L Account" temporary)
@@ -26,18 +45,19 @@ codeunit 57803 "BCB Test Data Generator"
         LineAmount: Decimal;
     begin
         LineAmount := Random(1000);
-        CreateGenJournalLine(GenJournalLine, DocumentNo, LineAmount, LineNo, TempGLAccount);
+        CreateGenJournalLine(GenJournalLine, JnlBatchName, DocumentNo, LineAmount, LineNo, TempGLAccount);
     end;
 
     procedure CreateGenJournalLine(
         var GenJournalLine: Record "Gen. Journal Line";
+        JnlBatchName: Code[10];
         DocumentNo: Code[20];
         Amount: Decimal;
         LineNo: Integer;
         var TempGLAccount: Record "G/L Account" temporary)
     begin
         GenJournalLine.Validate("Journal Template Name", GetGeneralJournalTemplateName());
-        GenJournalLine.Validate("Journal Batch Name", GetGeneralJournalBatchName());
+        GenJournalLine.Validate("Journal Batch Name", JnlBatchName);
         GenJournalLine.Validate("Line No.", LineNo);
         GenJournalLine.Validate("Document No.", DocumentNo);
         GenJournalLine.Validate("Posting Date", WorkDate());
@@ -46,6 +66,20 @@ codeunit 57803 "BCB Test Data Generator"
 
         GenJournalLine.Validate(Amount, Amount);
         GenJournalLine.Insert(true);
+    end;
+
+    procedure DeleteGenJournalLines(JnlBatchName: Code[10])
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+    begin
+        GenJournalLine.SetRange("Journal Template Name", GetGeneralJournalTemplateName());
+        GenJournalLine.SetRange("Journal Batch Name", JnlBatchName);
+        GenJournalLine.DeleteAll();
+    end;
+
+    procedure DeleteGenJournalLines()
+    begin
+        DeleteGenJournalLines(GetGeneralJournalBatchName());
     end;
 
     procedure GetGeneralJournalTemplateName(): Code[10]
@@ -63,6 +97,15 @@ codeunit 57803 "BCB Test Data Generator"
         exit('GENJNLPERF');
     end;
 
+    procedure CreateGenJnlDocNoSeriesIfNotExists()
+    var
+        NoSeries: Record "No. Series";
+    begin
+        NoSeries.SetRange(Code, GetGenJnlDocNoSeriesCode());
+        if NoSeries.IsEmpty() then
+            CreateGenJnlDocNoSeries();
+    end;
+
     procedure CreateGenJnlDocNoSeries()
     begin
         CreateNoSeries(GetGenJnlDocNoSeriesCode());
@@ -75,24 +118,42 @@ codeunit 57803 "BCB Test Data Generator"
         exit(NoSeries.GetNextNo(GetGenJnlDocNoSeriesCode()));
     end;
 
+    procedure CreateItemJnlBatch(BatchName: Code[10])
+    var
+        ItemJournalBatch: Record "Item Journal Batch";
+    begin
+        if ItemJournalBatch.Get(GetItemJournalTemplateName(), BatchName) then
+            exit;
+
+        ItemJournalBatch.Validate("Journal Template Name", GetItemJournalTemplateName());
+        ItemJournalBatch.Validate(Name, BatchName);
+        ItemJournalBatch.Insert(true);
+    end;
+
     procedure CreateItemJournalLines(NoOfLines: Integer)
+    begin
+        CreateItemJournalLines(NoOfLines, GetItemJournalBatchName());
+    end;
+
+    procedure CreateItemJournalLines(NoOfLines: Integer; JnlBatchName: Code[10])
     var
         TempItem: Record Item temporary;
         GenJournalLine: Record "Gen. Journal Line";
         DocumentNo: Code[20];
         I: Integer;
     begin
+        CreateItemJnlBatch(JnlBatchName);
         DocumentNo := GetItemJnlDocumentNo();
         for I := 1 to NoOfLines do
-            CreateItemJournalLine(GenJournalLine, DocumentNo, I, TempItem);
+            CreateItemJournalLine(GenJournalLine, JnlBatchName, DocumentNo, I, TempItem);
     end;
 
-    procedure CreateItemJournalLine(var GenJournalLine: Record "Gen. Journal Line"; DocumentNo: Code[20]; LineNo: Integer; var TempItem: Record Item temporary)
+    procedure CreateItemJournalLine(var GenJournalLine: Record "Gen. Journal Line"; JnlBatchName: Code[10]; DocumentNo: Code[20]; LineNo: Integer; var TempItem: Record Item temporary)
     var
         ItemJournalLine: Record "Item Journal Line";
     begin
         ItemJournalLine.Validate("Journal Template Name", GetItemJournalTemplateName());
-        ItemJournalLine.Validate("Journal Batch Name", GetItemJournalBatchName());
+        ItemJournalLine.Validate("Journal Batch Name", JnlBatchName);
         ItemJournalLine.Validate("Line No.", LineNo);
         ItemJournalLine.Validate("Entry Type", Enum::"Item Journal Entry Type"::Purchase);
         ItemJournalLine.Validate("Document Type", Enum::"Item Ledger Document Type"::"Purchase Receipt");
@@ -102,6 +163,20 @@ codeunit 57803 "BCB Test Data Generator"
         ItemJournalLine.Validate("Unit Amount", Random(100));
         ItemJournalLine.Validate("Posting Date", WorkDate());
         ItemJournalLine.Insert(true);
+    end;
+
+    procedure DeleteItemJournalLines(JnlBatchName: Code[10])
+    var
+        ItemJournalLine: Record "Item Journal Line";
+    begin
+        ItemJournalLine.SetRange("Journal Template Name", GetItemJournalTemplateName());
+        ItemJournalLine.SetRange("Journal Batch Name", JnlBatchName);
+        ItemJournalLine.DeleteAll();
+    end;
+
+    procedure DeleteItemJournalLines()
+    begin
+        DeleteItemJournalLines(GetItemJournalBatchName());
     end;
 
     procedure GetItemJournalTemplateName(): Code[10]
@@ -122,6 +197,15 @@ codeunit 57803 "BCB Test Data Generator"
     procedure CreateItemJnlDocNoSeries()
     begin
         CreateNoSeries(GetItemJnlDocNoSeriesCode());
+    end;
+
+    procedure CreateItemJnlDocNoSeriesIfNotExists()
+    var
+        NoSeries: Record "No. Series";
+    begin
+        NoSeries.SetRange(Code, GetItemJnlDocNoSeriesCode());
+        if NoSeries.IsEmpty() then
+            CreateItemJnlDocNoSeries();
     end;
 
     local procedure GetItemJnlDocumentNo(): Code[20]
@@ -175,6 +259,53 @@ codeunit 57803 "BCB Test Data Generator"
         exit(SalesSetup."Order Nos.");
     end;
 
+    procedure CreatePurchaseOrder(LinesCount: Integer)
+    var
+        PurchaseHeader: Record "Purchase Header";
+        TempItem: Record Item temporary;
+        I: Integer;
+    begin
+        CreatePurchaseOrderHeader(PurchaseHeader, Enum::"Purchase Document Type"::Order);
+
+        for I := 1 to LinesCount do
+            CreatePurchaseLine(PurchaseHeader, I, TempItem);
+    end;
+
+    procedure CreatePurchaseOrderHeader(var PurchaseHeader: Record "Purchase Header"; DocType: Enum "Purchase Document Type")
+    begin
+        PurchaseHeader.Validate("Document Type", DocType);
+        PurchaseHeader.Validate("Posting Date", WorkDate());
+        PurchaseHeader.Validate("Buy-from Vendor No.", SelectRandomVendor());
+        PurchaseHeader.Validate(Receive, true);
+        PurchaseHeader.Validate(Invoice, true);
+        PurchaseHeader.Insert(true);
+
+        PurchaseHeader.Validate("Vendor Invoice No.", PurchaseHeader."No.");
+        PurchaseHeader.Modify(true);
+    end;
+
+    procedure CreatePurchaseLine(PurchaseHeader: Record "Purchase Header"; LineNo: Integer; var TempItem: Record Item temporary)
+    var
+        PurchaseLine: Record "Purchase Line";
+    begin
+        PurchaseLine.Validate("Document Type", PurchaseHeader."Document Type");
+        PurchaseLine.Validate("Document No.", PurchaseHeader."No.");
+        PurchaseLine.Validate("Line No.", LineNo);
+        PurchaseLine.Validate(Type, Enum::"Purchase Line Type"::Item);
+        PurchaseLine.Validate("No.", SelectRandomItem(TempItem));
+        PurchaseLine.Validate(Quantity, Random(10));
+        PurchaseLine.Validate("Unit Cost", Random(100));
+        PurchaseLine.Insert(true);
+    end;
+
+    procedure GetPurchaseOrdersNoSeriesCode(): Code[20]
+    var
+        PurchaseSetup: Record "Purchases & Payables Setup";
+    begin
+        PurchaseSetup.Get();
+        exit(PurchaseSetup."Order Nos.");
+    end;
+
     local procedure SelectRandomGLAccount(
         var TempGLAccount: Record "G/L Account";
         DirectPosting: Boolean;
@@ -206,6 +337,16 @@ codeunit 57803 "BCB Test Data Generator"
         Customer.FindSet();
         Customer.Next(Random(Customer.Count) - 1);
         exit(Customer."No.");
+    end;
+
+    procedure SelectRandomVendor(): Code[20]
+    var
+        Vendor: Record Vendor;
+    begin
+        Vendor.SetRange(Blocked, Enum::"Vendor Blocked"::" ");
+        Vendor.FindSet();
+        Vendor.Next(Random(Vendor.Count) - 1);
+        exit(Vendor."No.");
     end;
 
     procedure CreateNoSeries(SeriesCode: Code[20])
@@ -262,5 +403,28 @@ codeunit 57803 "BCB Test Data Generator"
             TempItem := Item;
             TempItem.Insert();
         until Item.Next() = 0;
+    end;
+
+    procedure SetDefaultInventorySetup()
+    var
+        InventorySetup: Record "Inventory Setup";
+    begin
+        InventorySetup.Get();
+        InventorySetup.Validate("Automatic Cost Posting", true);
+        InventorySetup.Validate("Automatic Cost Adjustment", Enum::"Automatic Cost Adjustment Type"::Never);
+        InventorySetup.Modify();        
+    end;
+
+    procedure CreateItems(NoOfItems: Integer)
+    var
+        Item: Record Item;
+        ItemTemplMgt: Codeunit "Item Templ. Mgt.";
+        IsHandled: Boolean;
+        I: Integer;
+    begin
+        for I := 1 to NoOfItems do begin
+            Clear(Item);
+            ItemTemplMgt.CreateItemFromTemplate(Item, IsHandled, 'ITEM');
+        end;
     end;
 }

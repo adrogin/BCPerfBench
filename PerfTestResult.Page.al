@@ -12,13 +12,34 @@ page 57801 "BCB Perf. Test Result"
         {
             repeater(TestResults)
             {
-                field("Test Code"; Rec."Test Code") { }
-                field("Iteration No."; Rec."Iteration No.") { }
-                field("Start Time"; Rec."Start Time") { }
-                field("End Time"; Rec."End Time") { }
-                field(TestDuration; TestDuration) { }
-                field("Init. Codeunit No."; Rec."Init. Codeunit No.") { }
-                field("Run Codeunit No."; Rec."Run Codeunit No.") { }
+                field("Test Code"; Rec."Test Code")
+                {
+                    ApplicationArea = All;
+                }
+                field("Iteration No."; Rec."Iteration No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Start Time"; Rec."Start Time")
+                {
+                    ApplicationArea = All;
+                }
+                field("End Time"; Rec."End Time")
+                {
+                    ApplicationArea = All;
+                }
+                field(TestDuration; TestDuration)
+                {
+                    ApplicationArea = All;
+                }
+                field("Init. Codeunit No."; Rec."Init. Codeunit No.")
+                {
+                    ApplicationArea = All;
+                }
+                field("Run Codeunit No."; Rec."Run Codeunit No.")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
     }
