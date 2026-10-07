@@ -111,15 +111,18 @@ codeunit 57802 "BCB Perf. Bench Tests"
 
     local procedure InitializeItemJnlParallelPostingTest(var JnlBatchNames: List of [Code[20]]; NoOfSessions: Integer; LinesPerSession: Integer)
     var
+        Item: Record Item;
+        ItemsInBatch: Integer;
         I: Integer;
         JnlBatchName: Code[10];
     begin
         TestDataGenerator.CreateItemJnlDocNoSeriesIfNotExists();
+        ItemsInBatch := Round(Item.Count() / NoOfSessions, 1, '<');
 
         for I := 1 to NoOfSessions do begin
             JnlBatchName := 'BGPOST' + Format(I).PadLeft(4, '0');
             TestDataGenerator.DeleteItemJournalLines(JnlBatchName);
-            TestDataGenerator.CreateItemJournalLines(LinesPerSession, JnlBatchName);
+            TestDataGenerator.CreateItemJournalLines(LinesPerSession, JnlBatchName, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch);
             JnlBatchNames.Add(JnlBatchName);
         end;
     end;

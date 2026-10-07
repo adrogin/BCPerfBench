@@ -137,6 +137,13 @@ codeunit 57803 "BCB Test Data Generator"
 
     procedure CreateItemJournalLines(NoOfLines: Integer; JnlBatchName: Code[10])
     var
+        Item: Record Item;
+    begin
+        CreateItemJournalLines(NoOfLines, JnlBatchName, 1, Item.Count);
+    end;
+
+    procedure CreateItemJournalLines(NoOfLines: Integer; JnlBatchName: Code[10]; MinItemIndex: Integer; MaxItemIndex: Integer)
+    var
         TempItem: Record Item temporary;
         GenJournalLine: Record "Gen. Journal Line";
         DocumentNo: Code[20];
@@ -145,10 +152,12 @@ codeunit 57803 "BCB Test Data Generator"
         CreateItemJnlBatch(JnlBatchName);
         DocumentNo := GetItemJnlDocumentNo();
         for I := 1 to NoOfLines do
-            CreateItemJournalLine(GenJournalLine, JnlBatchName, DocumentNo, I, TempItem);
+            CreateItemJournalLine(GenJournalLine, JnlBatchName, DocumentNo, I, MinItemIndex, MaxItemIndex, TempItem);
     end;
 
-    procedure CreateItemJournalLine(var GenJournalLine: Record "Gen. Journal Line"; JnlBatchName: Code[10]; DocumentNo: Code[20]; LineNo: Integer; var TempItem: Record Item temporary)
+    procedure CreateItemJournalLine(
+        var GenJournalLine: Record "Gen. Journal Line"; JnlBatchName: Code[10]; DocumentNo: Code[20];
+        LineNo: Integer; MinItemIndex: Integer; MaxItemIndex: Integer; var TempItem: Record Item temporary)
     var
         ItemJournalLine: Record "Item Journal Line";
     begin
@@ -158,7 +167,7 @@ codeunit 57803 "BCB Test Data Generator"
         ItemJournalLine.Validate("Entry Type", Enum::"Item Journal Entry Type"::Purchase);
         ItemJournalLine.Validate("Document Type", Enum::"Item Ledger Document Type"::"Purchase Receipt");
         ItemJournalLine.Validate("Document No.", DocumentNo);
-        ItemJournalLine.Validate("Item No.", SelectRandomItem(TempItem));
+        ItemJournalLine.Validate("Item No.", SelectRandomItem(TempItem, MinItemIndex, MaxItemIndex));
         ItemJournalLine.Validate(Quantity, Random(10));
         ItemJournalLine.Validate("Unit Amount", Random(100));
         ItemJournalLine.Validate("Posting Date", WorkDate());
@@ -321,11 +330,22 @@ codeunit 57803 "BCB Test Data Generator"
 
     local procedure SelectRandomItem(var TempItem: Record Item): Code[20]
     begin
+        SelectRandomItem(TempItem, 0, 0);
+    end;
+
+    local procedure SelectRandomItem(var TempItem: Record Item; MinItemIndex: Integer; MaxItemIndex: Integer): Code[20]
+    begin
         if TempItem.IsEmpty() then
             ReadItemsToTempTable(TempItem);
 
+        if (MinItemIndex = 0) or (MaxItemIndex = 0) then begin
+            MinItemIndex := 1;
+            MaxItemIndex := TempItem.Count();
+        end;
+
         TempItem.FindSet();
-        TempItem.Next(Random(TempItem.Count) - 1);
+        TempItem.Next(MinItemIndex - 1);
+        TempItem.Next(Random(MaxItemIndex - MinItemIndex));
         exit(TempItem."No.");
     end;
 

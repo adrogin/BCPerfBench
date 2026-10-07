@@ -16,8 +16,8 @@ codeunit 57805 "BCB Item Jnl. Posting - Run"
         JnlBatchName := ItemJournalLine."Journal Batch Name";
     
         if (JnlTemplateName = '') or (JnlBatchName = '') then begin
-            JnlTemplateName := TestDataGenerator.GetGeneralJournalTemplateName();
-            JnlBatchName := TestDataGenerator.GetGeneralJournalBatchName();
+            JnlTemplateName := TestDataGenerator.GetItemJournalTemplateName();
+            JnlBatchName := TestDataGenerator.GetItemJournalBatchName();
         end;
 
         PostItemJournalBatch(JnlTemplateName, JnlBatchName);
