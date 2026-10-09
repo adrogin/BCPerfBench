@@ -100,6 +100,15 @@ codeunit 57802 "BCB Perf. Bench Tests"
             StartGenJnlBackgroundPostingSession(BatchName);
     end;
 
+    local procedure StartGenJnlBackgroundPostingSession(JnlBatchName: Code[20])
+    var
+        GenJournalBatch: Record "Gen. Journal Batch";
+        SessionId: Integer;
+    begin
+        GenJournalBatch.Get(TestDataGenerator.GetGeneralJournalTemplateName(), JnlBatchName);
+        StartSession(SessionId, Codeunit::"BCB Gen. Jnl. Parallel Post", CompanyName, GenJournalBatch);
+    end;
+
     procedure RunItemJnlParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerSession: Integer)
     var
         JnlBatchNames: List of [Code[20]];
@@ -135,15 +144,6 @@ codeunit 57802 "BCB Perf. Bench Tests"
             StartItemJnlBackgroundPostingSession(BatchName);
     end;
 
-    local procedure StartGenJnlBackgroundPostingSession(JnlBatchName: Code[20])
-    var
-        GenJournalBatch: Record "Gen. Journal Batch";
-        SessionId: Integer;
-    begin
-        GenJournalBatch.Get(TestDataGenerator.GetGeneralJournalTemplateName(), JnlBatchName);
-        StartSession(SessionId, Codeunit::"BCB Gen. Jnl. Parallel Post", CompanyName, GenJournalBatch);
-    end;
-
     local procedure StartItemJnlBackgroundPostingSession(JnlBatchName: Code[20])
     var
         ItemJournalBatch: Record "Item Journal Batch";
@@ -151,6 +151,74 @@ codeunit 57802 "BCB Perf. Bench Tests"
     begin
         ItemJournalBatch.Get(TestDataGenerator.GetItemJournalTemplateName(), JnlBatchName);
         StartSession(SessionId, Codeunit::"BCB Item Jnl. Parallel Post", CompanyName, ItemJournalBatch);
+    end;
+
+    procedure RunSOParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerOrder: Integer)
+    var
+        DocumentNos: List of [Code[20]];
+    begin
+        ClearParallelTestResult(TestCode);
+        InitializeSalesOrderParallelPostingTest(DocumentNos, NoOfSessions, LinesPerOrder);
+        StartSalesOrderPostingTasks(DocumentNos);
+    end;
+
+    procedure InitializeSalesOrderParallelPostingTest(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
+    var
+        I: Integer;
+    begin
+        for I := 1 to NoOfSessions do
+            DocumentNos.Add(TestDataGenerator.CreateSalesOrder(LinesPerOrder));
+    end;
+
+    local procedure StartSalesOrderPostingTasks(DocumentNos: List of [Code[20]])
+    var
+        DocNo: Code[20];
+    begin
+        foreach DocNo in DocumentNos do
+            StartSalesOrderBackgroundPostingSession(DocNo);
+    end;
+
+    local procedure StartSalesOrderBackgroundPostingSession(DocumentNo: Code[20])
+    var
+        SalesHeader: Record "Sales Header";
+        SessionId: Integer;
+    begin
+        SalesHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
+        StartSession(SessionId, Codeunit::"BCB SO Parallel Post", CompanyName, SalesHeader);
+    end;
+
+    procedure RunPOParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerOrder: Integer)
+    var
+        DocumentNos: List of [Code[20]];
+    begin
+        ClearParallelTestResult(TestCode);
+        InitializePurchaseOrderParallelPostingTest(DocumentNos, NoOfSessions, LinesPerOrder);
+        StartPurchaseOrderPostingTasks(DocumentNos);
+    end;
+
+    procedure InitializePurchaseOrderParallelPostingTest(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
+    var
+        I: Integer;
+    begin
+        for I := 1 to NoOfSessions do
+            DocumentNos.Add(TestDataGenerator.CreatePurchaseOrder(LinesPerOrder));
+    end;
+
+    local procedure StartPurchaseOrderPostingTasks(DocumentNos: List of [Code[20]])
+    var
+        DocNo: Code[20];
+    begin
+        foreach DocNo in DocumentNos do
+            StartPurchaseOrderBackgroundPostingSession(DocNo);
+    end;
+
+    local procedure StartPurchaseOrderBackgroundPostingSession(DocumentNo: Code[20])
+    var
+        SalesHeader: Record "Sales Header";
+        SessionId: Integer;
+    begin
+        SalesHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
+        StartSession(SessionId, Codeunit::"BCB SO Parallel Post", CompanyName, SalesHeader);
     end;
 
     var

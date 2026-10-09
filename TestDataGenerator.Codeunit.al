@@ -224,7 +224,7 @@ codeunit 57803 "BCB Test Data Generator"
         exit(NoSeries.GetNextNo(GetItemJnlDocNoSeriesCode()));
     end;
 
-    procedure CreateSalesOrder(LinesCount: Integer)
+    procedure CreateSalesOrder(LinesCount: Integer): Code[20]
     var
         SalesHeader: Record "Sales Header";
         TempItem: Record Item temporary;
@@ -234,6 +234,8 @@ codeunit 57803 "BCB Test Data Generator"
 
         for I := 1 to LinesCount do
             CreateSalesLine(SalesHeader, I, TempItem);
+
+        exit(SalesHeader."No.");
     end;
 
     procedure CreateSalesOrderHeader(var SalesHeader: Record "Sales Header"; DocType: Enum "Sales Document Type")
@@ -268,7 +270,7 @@ codeunit 57803 "BCB Test Data Generator"
         exit(SalesSetup."Order Nos.");
     end;
 
-    procedure CreatePurchaseOrder(LinesCount: Integer)
+    procedure CreatePurchaseOrder(LinesCount: Integer): Code[20]
     var
         PurchaseHeader: Record "Purchase Header";
         TempItem: Record Item temporary;
@@ -278,6 +280,8 @@ codeunit 57803 "BCB Test Data Generator"
 
         for I := 1 to LinesCount do
             CreatePurchaseLine(PurchaseHeader, I, TempItem);
+
+        exit(PurchaseHeader."No.");
     end;
 
     procedure CreatePurchaseOrderHeader(var PurchaseHeader: Record "Purchase Header"; DocType: Enum "Purchase Document Type")
@@ -330,7 +334,7 @@ codeunit 57803 "BCB Test Data Generator"
 
     local procedure SelectRandomItem(var TempItem: Record Item): Code[20]
     begin
-        SelectRandomItem(TempItem, 0, 0);
+        exit(SelectRandomItem(TempItem, 0, 0));
     end;
 
     local procedure SelectRandomItem(var TempItem: Record Item; MinItemIndex: Integer; MaxItemIndex: Integer): Code[20]

@@ -84,7 +84,7 @@ page 57800 "BCB Perf. Benchmark"
                         PerfBenchTests.RunGenJnlParallelPostingTest('GENJNL_PARALLEL_POST', 10, 100);
                     end;
                 }
-                action(itemJnlParallelPosting)
+                action(ItemJnlParallelPosting)
                 {
                     Caption = 'Item Jnl. - Parallel Posting';
                     ApplicationArea = All;
@@ -92,6 +92,26 @@ page 57800 "BCB Perf. Benchmark"
                     trigger OnAction()
                     begin
                         PerfBenchTests.RunItemJnlParallelPostingTest('ITEMJ_PARALLEL_POST', 10, 100);
+                    end;
+                }
+                action(SOParallelPosting)
+                {
+                    Caption = 'SO - Parallel Posting';
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        PerfBenchTests.RunSOParallelPostingTest('SO_PARALLEL_POST', 10, 100);
+                    end;
+                }
+                action(POParallelPosting)
+                {
+                    Caption = 'PO - Parallel Posting';
+                    ApplicationArea = All;
+
+                    trigger OnAction()
+                    begin
+                        PerfBenchTests.RunPOParallelPostingTest('PO_PARALLEL_POST', 10, 100);
                     end;
                 }
             }

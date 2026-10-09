@@ -1,20 +1,19 @@
 codeunit 57807 "BCB Sales Order Posting - Run"
 {
-    trigger OnRun()
-    begin
-        RunTest();
-    end;
+    TableNo = "Sales Header";
 
-    procedure RunTest()
+    trigger OnRun()
     var
         SalesHeader: Record "Sales Header";
         SalesPost: Codeunit "Sales-Post";
         NoSeries: Codeunit "No. Series";
+        TestDataGenerator: Codeunit "BCB Test Data Generator";
     begin
-        SalesHeader.Get(Enum::"Sales Document Type"::Order, NoSeries.GetLastNoUsed(TestDataGenerator.GetSalesOrdersNoSeriesCode()));
+        if Rec."No." <> '' then
+            SalesHeader := Rec
+        else
+            SalesHeader.Get(Enum::"Sales Document Type"::Order, NoSeries.GetLastNoUsed(TestDataGenerator.GetSalesOrdersNoSeriesCode()));
+
         SalesPost.Run(SalesHeader);
     end;
-
-    var
-        TestDataGenerator: Codeunit "BCB Test Data Generator";
 }
