@@ -156,8 +156,13 @@ codeunit 57803 "BCB Test Data Generator"
     end;
 
     procedure CreateItemJournalLine(
-        var GenJournalLine: Record "Gen. Journal Line"; JnlBatchName: Code[10]; DocumentNo: Code[20];
-        LineNo: Integer; MinItemIndex: Integer; MaxItemIndex: Integer; var TempItem: Record Item temporary)
+        var GenJournalLine: Record "Gen. Journal Line";
+        JnlBatchName: Code[10];
+        DocumentNo: Code[20];
+        LineNo: Integer;
+        MinItemIndex: Integer;
+        MaxItemIndex: Integer;
+        var TempItem: Record Item temporary)
     var
         ItemJournalLine: Record "Item Journal Line";
     begin
@@ -241,6 +246,7 @@ codeunit 57803 "BCB Test Data Generator"
         SalesHeader.Validate("Document Type", DocType);
         SalesHeader.Validate("Posting Date", WorkDate());
         SalesHeader.Validate("Sell-to Customer No.", SelectRandomCustomer());
+        SalesHeader.Validate("Location Code", '');
         SalesHeader.Validate(Ship, true);
         SalesHeader.Validate(Invoice, true);
         SalesHeader.Insert(true);
@@ -256,6 +262,8 @@ codeunit 57803 "BCB Test Data Generator"
         SalesLine.Validate(Type, Enum::"Sales Line Type"::Item);
         SalesLine.Validate("No.", SelectRandomItem(TempItem));
         SalesLine.Validate(Quantity, Random(10));
+        SalesLine.Validate("Qty. to Ship", SalesLine.Quantity);
+        SalesLine.Validate("Qty. to Invoice", SalesLine.Quantity);
         SalesLine.Validate("Unit Cost", Random(100));
         SalesLine.Insert(true);
     end;
@@ -285,6 +293,7 @@ codeunit 57803 "BCB Test Data Generator"
         PurchaseHeader.Validate("Document Type", DocType);
         PurchaseHeader.Validate("Posting Date", WorkDate());
         PurchaseHeader.Validate("Buy-from Vendor No.", SelectRandomVendor());
+        PurchaseHeader.Validate("Location Code", '');
         PurchaseHeader.Validate(Receive, true);
         PurchaseHeader.Validate(Invoice, true);
         PurchaseHeader.Insert(true);
@@ -303,6 +312,8 @@ codeunit 57803 "BCB Test Data Generator"
         PurchaseLine.Validate(Type, Enum::"Purchase Line Type"::Item);
         PurchaseLine.Validate("No.", SelectRandomItem(TempItem));
         PurchaseLine.Validate(Quantity, Random(10));
+        PurchaseLine.Validate("Qty. to Receive", PurchaseLine.Quantity);
+        PurchaseLine.Validate("Qty. to Invoice", PurchaseLine.Quantity);
         PurchaseLine.Validate("Unit Cost", Random(100));
         PurchaseLine.Insert(true);
     end;
@@ -330,7 +341,7 @@ codeunit 57803 "BCB Test Data Generator"
 
     local procedure SelectRandomItem(var TempItem: Record Item): Code[20]
     begin
-        SelectRandomItem(TempItem, 0, 0);
+        exit(SelectRandomItem(TempItem, 0, 0));
     end;
 
     local procedure SelectRandomItem(var TempItem: Record Item; MinItemIndex: Integer; MaxItemIndex: Integer): Code[20]
@@ -432,7 +443,7 @@ codeunit 57803 "BCB Test Data Generator"
         InventorySetup.Get();
         InventorySetup.Validate("Automatic Cost Posting", true);
         InventorySetup.Validate("Automatic Cost Adjustment", Enum::"Automatic Cost Adjustment Type"::Never);
-        InventorySetup.Modify();        
+        InventorySetup.Modify();
     end;
 
     procedure CreateItems(NoOfItems: Integer)
