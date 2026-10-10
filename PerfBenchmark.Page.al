@@ -29,6 +29,17 @@ page 57800 "BCB Perf. Benchmark"
                         TestDataGenerator.CreateItems(1000);
                     end;
                 }
+                action(ResetCreditLimit)
+                {
+                    Caption = 'Reset Credit Limit';
+                    ApplicationArea = All;
+                    ToolTip = 'Set the credit limit to 0 for all customers.';
+
+                    trigger OnAction()
+                    begin
+                        TestDataGenerator.ResetCustomersCreditLimits();
+                    end;
+                }
             }
             group(RunTests)
             {

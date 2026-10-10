@@ -230,6 +230,11 @@ codeunit 57803 "BCB Test Data Generator"
     end;
 
     procedure CreateSalesOrder(LinesCount: Integer): Code[20]
+    begin
+        exit(CreateSalesOrder(LinesCount, 0, 0));
+    end;
+
+    procedure CreateSalesOrder(LinesCount: Integer; MinItemIndex: Integer; MaxItemIndex: Integer): Code[20]
     var
         SalesHeader: Record "Sales Header";
         TempItem: Record Item temporary;
@@ -238,7 +243,7 @@ codeunit 57803 "BCB Test Data Generator"
         CreateSalesOrderHeader(SalesHeader, Enum::"Sales Document Type"::Order);
 
         for I := 1 to LinesCount do
-            CreateSalesLine(SalesHeader, I, TempItem);
+            CreateSalesLine(SalesHeader, I, TempItem, MinItemIndex, MaxItemIndex);
 
         exit(SalesHeader."No.");
     end;
@@ -246,15 +251,22 @@ codeunit 57803 "BCB Test Data Generator"
     procedure CreateSalesOrderHeader(var SalesHeader: Record "Sales Header"; DocType: Enum "Sales Document Type")
     begin
         SalesHeader.Validate("Document Type", DocType);
+        SalesHeader.Insert(true);
+
         SalesHeader.Validate("Posting Date", WorkDate());
         SalesHeader.Validate("Sell-to Customer No.", SelectRandomCustomer());
         SalesHeader.Validate("Location Code", '');
         SalesHeader.Validate(Ship, true);
         SalesHeader.Validate(Invoice, true);
-        SalesHeader.Insert(true);
+        SalesHeader.Modify(true);
     end;
 
     procedure CreateSalesLine(SalesHeader: Record "Sales Header"; LineNo: Integer; var TempItem: Record Item temporary)
+    begin
+        CreateSalesLine(SalesHeader, LineNo, TempItem, 0, 0);
+    end;
+
+    procedure CreateSalesLine(SalesHeader: Record "Sales Header"; LineNo: Integer; var TempItem: Record Item temporary; MinItemIndex: Integer; MaxItemIndex: Integer)
     var
         SalesLine: Record "Sales Line";
     begin
@@ -262,7 +274,7 @@ codeunit 57803 "BCB Test Data Generator"
         SalesLine.Validate("Document No.", SalesHeader."No.");
         SalesLine.Validate("Line No.", LineNo);
         SalesLine.Validate(Type, Enum::"Sales Line Type"::Item);
-        SalesLine.Validate("No.", SelectRandomItem(TempItem));
+        SalesLine.Validate("No.", SelectRandomItem(TempItem, MinItemIndex, MaxItemIndex));
         SalesLine.Validate(Quantity, Random(10));
         SalesLine.Validate("Qty. to Ship", SalesLine.Quantity);
         SalesLine.Validate("Qty. to Invoice", SalesLine.Quantity);
@@ -279,6 +291,11 @@ codeunit 57803 "BCB Test Data Generator"
     end;
 
     procedure CreatePurchaseOrder(LinesCount: Integer): Code[20]
+    begin
+        exit(CreatePurchaseOrder(LinesCount, 0, 0));
+    end;
+
+    procedure CreatePurchaseOrder(LinesCount: Integer; MinItemIndex: Integer; MaxItemIndex: Integer): Code[20]
     var
         PurchaseHeader: Record "Purchase Header";
         TempItem: Record Item temporary;
@@ -287,7 +304,7 @@ codeunit 57803 "BCB Test Data Generator"
         CreatePurchaseOrderHeader(PurchaseHeader, Enum::"Purchase Document Type"::Order);
 
         for I := 1 to LinesCount do
-            CreatePurchaseLine(PurchaseHeader, I, TempItem);
+            CreatePurchaseLine(PurchaseHeader, I, TempItem, MinItemIndex, MaxItemIndex);
 
         exit(PurchaseHeader."No.");
     end;
@@ -295,18 +312,23 @@ codeunit 57803 "BCB Test Data Generator"
     procedure CreatePurchaseOrderHeader(var PurchaseHeader: Record "Purchase Header"; DocType: Enum "Purchase Document Type")
     begin
         PurchaseHeader.Validate("Document Type", DocType);
+        PurchaseHeader.Insert(true);
+
         PurchaseHeader.Validate("Posting Date", WorkDate());
         PurchaseHeader.Validate("Buy-from Vendor No.", SelectRandomVendor());
         PurchaseHeader.Validate("Location Code", '');
         PurchaseHeader.Validate(Receive, true);
         PurchaseHeader.Validate(Invoice, true);
-        PurchaseHeader.Insert(true);
-
         PurchaseHeader.Validate("Vendor Invoice No.", PurchaseHeader."No.");
         PurchaseHeader.Modify(true);
     end;
 
     procedure CreatePurchaseLine(PurchaseHeader: Record "Purchase Header"; LineNo: Integer; var TempItem: Record Item temporary)
+    begin
+        CreatePurchaseLine(PurchaseHeader, LineNo, TempItem, 0, 0);
+    end;
+
+    procedure CreatePurchaseLine(PurchaseHeader: Record "Purchase Header"; LineNo: Integer; var TempItem: Record Item temporary; MinItemIndex: Integer; MaxItemIndex: Integer)
     var
         PurchaseLine: Record "Purchase Line";
     begin
@@ -314,7 +336,7 @@ codeunit 57803 "BCB Test Data Generator"
         PurchaseLine.Validate("Document No.", PurchaseHeader."No.");
         PurchaseLine.Validate("Line No.", LineNo);
         PurchaseLine.Validate(Type, Enum::"Purchase Line Type"::Item);
-        PurchaseLine.Validate("No.", SelectRandomItem(TempItem));
+        PurchaseLine.Validate("No.", SelectRandomItem(TempItem, MinItemIndex, MaxItemIndex));
         PurchaseLine.Validate(Quantity, Random(10));
         PurchaseLine.Validate("Qty. to Receive", PurchaseLine.Quantity);
         PurchaseLine.Validate("Qty. to Invoice", PurchaseLine.Quantity);
@@ -350,8 +372,7 @@ codeunit 57803 "BCB Test Data Generator"
 
     local procedure SelectRandomItem(var TempItem: Record Item; MinItemIndex: Integer; MaxItemIndex: Integer): Code[20]
     begin
-        if TempItem.IsEmpty() then
-            ReadItemsToTempTable(TempItem);
+        InitTempItemIfEmpty(TempItem);
 
         if (MinItemIndex = 0) or (MaxItemIndex = 0) then begin
             MinItemIndex := 1;
@@ -364,11 +385,18 @@ codeunit 57803 "BCB Test Data Generator"
         exit(TempItem."No.");
     end;
 
+    local procedure InitTempItemIfEmpty(var TempItem: Record Item temporary)
+    begin
+        if TempItem.IsEmpty() then
+            ReadItemsToTempTable(TempItem);
+    end;
+
     procedure SelectRandomCustomer(): Code[20]
     var
         Customer: Record Customer;
     begin
         Customer.SetRange(Blocked, Enum::"Customer Blocked"::" ");
+        Customer.SetRange("IC Partner Code", '');
         Customer.FindSet();
         Customer.Next(Random(Customer.Count) - 1);
         exit(Customer."No.");
@@ -379,6 +407,7 @@ codeunit 57803 "BCB Test Data Generator"
         Vendor: Record Vendor;
     begin
         Vendor.SetRange(Blocked, Enum::"Vendor Blocked"::" ");
+        Vendor.SetRange("IC Partner Code", '');
         Vendor.FindSet();
         Vendor.Next(Random(Vendor.Count) - 1);
         exit(Vendor."No.");
@@ -461,5 +490,17 @@ codeunit 57803 "BCB Test Data Generator"
             Clear(Item);
             ItemTemplMgt.CreateItemFromTemplate(Item, IsHandled, 'ITEM');
         end;
+    end;
+
+    procedure ResetCustomersCreditLimits()
+    var
+        Customer: Record Customer;
+    begin
+        Customer.SetFilter("Credit Limit (LCY)", '>0');
+        if Customer.FindSet() then
+            repeat
+                Customer.Validate("Credit Limit (LCY)", 0);
+                Customer.Modify(true);
+            until Customer.Next() = 0;
     end;
 }

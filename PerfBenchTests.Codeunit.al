@@ -74,6 +74,8 @@ codeunit 57802 "BCB Perf. Bench Tests"
     begin
         ClearParallelTestResult(TestCode);
         InitializeGenJnlParallelPostingTest(JnlBatchNames, NoOfSessions, LinesPerSession);
+        Commit();
+
         StartGenJnlPostingTasks(JnlBatchNames);
     end;
 
@@ -115,6 +117,8 @@ codeunit 57802 "BCB Perf. Bench Tests"
     begin
         ClearParallelTestResult(TestCode);
         InitializeItemJnlParallelPostingTest(JnlBatchNames, NoOfSessions, LinesPerSession);
+        Commit();
+
         StartItemJnlPostingTasks(JnlBatchNames);
     end;
 
@@ -159,15 +163,21 @@ codeunit 57802 "BCB Perf. Bench Tests"
     begin
         ClearParallelTestResult(TestCode);
         InitializeSalesOrderParallelPostingTest(DocumentNos, NoOfSessions, LinesPerOrder);
+        Commit();
+
         StartSalesOrderPostingTasks(DocumentNos);
     end;
 
     procedure InitializeSalesOrderParallelPostingTest(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
     var
+        Item: Record Item;
         I: Integer;
+        ItemsInBatch: Integer;
     begin
+        ItemsInBatch := Round(Item.Count() / NoOfSessions, 1, '<');
+
         for I := 1 to NoOfSessions do
-            DocumentNos.Add(TestDataGenerator.CreateSalesOrder(LinesPerOrder));
+            DocumentNos.Add(TestDataGenerator.CreateSalesOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
     end;
 
     local procedure StartSalesOrderPostingTasks(DocumentNos: List of [Code[20]])
@@ -193,15 +203,21 @@ codeunit 57802 "BCB Perf. Bench Tests"
     begin
         ClearParallelTestResult(TestCode);
         InitializePurchaseOrderParallelPostingTest(DocumentNos, NoOfSessions, LinesPerOrder);
+        Commit();
+
         StartPurchaseOrderPostingTasks(DocumentNos);
     end;
 
     procedure InitializePurchaseOrderParallelPostingTest(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
     var
+        Item: Record Item;
         I: Integer;
+        ItemsInBatch: Integer;
     begin
+        ItemsInBatch := Round(Item.Count() / NoOfSessions, 1, '<');
+
         for I := 1 to NoOfSessions do
-            DocumentNos.Add(TestDataGenerator.CreatePurchaseOrder(LinesPerOrder));
+            DocumentNos.Add(TestDataGenerator.CreatePurchaseOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
     end;
 
     local procedure StartPurchaseOrderPostingTasks(DocumentNos: List of [Code[20]])
@@ -214,11 +230,11 @@ codeunit 57802 "BCB Perf. Bench Tests"
 
     local procedure StartPurchaseOrderBackgroundPostingSession(DocumentNo: Code[20])
     var
-        SalesHeader: Record "Sales Header";
+        PurchaseHeader: Record "Purchase Header";
         SessionId: Integer;
     begin
-        SalesHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
-        StartSession(SessionId, Codeunit::"BCB SO Parallel Post", CompanyName, SalesHeader);
+        PurchaseHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
+        StartSession(SessionId, Codeunit::"BCB PO Parallel Post", CompanyName, PurchaseHeader);
     end;
 
     var
