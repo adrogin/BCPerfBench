@@ -49,6 +49,7 @@ codeunit 57802 "BCB Perf. Bench Tests"
             PerfParallelTestResult.Validate("Error Text", CopyStr(GetLastErrorText(), 1, MaxStrLen(PerfParallelTestResult."Error Text")));
             PerfParallelTestResult.Validate("Error Call Stack", CopyStr(GetLastErrorCallStack, 1, MaxStrLen(PerfParallelTestResult."Error Call Stack")));
         end;
+
         PerfParallelTestResult.Insert(true);
     end;
 
@@ -70,13 +71,15 @@ codeunit 57802 "BCB Perf. Bench Tests"
 
     procedure RunGenJnlParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerSession: Integer)
     var
+        BackgroundPostingTest: Interface "BCB Background Posting Test";
         JnlBatchNames: List of [Code[20]];
     begin
         ClearParallelTestResult(TestCode);
         InitializeGenJnlParallelPostingTest(JnlBatchNames, NoOfSessions, LinesPerSession);
         Commit();
 
-        StartGenJnlPostingTasks(JnlBatchNames);
+        BackgroundPostingTest := Enum::"BCB Background Posting Test"::"Post General Journal";
+        RunBackgroundPostingTestIterations(BackgroundPostingTest, JnlBatchNames, TestCode);
     end;
 
     local procedure InitializeGenJnlParallelPostingTest(var JnlBatchNames: List of [Code[20]]; NoOfSessions: Integer; LinesPerSession: Integer)
@@ -94,32 +97,17 @@ codeunit 57802 "BCB Perf. Bench Tests"
         end;
     end;
 
-    local procedure StartGenJnlPostingTasks(JnlBatchNames: List of [Code[20]])
-    var
-        BatchName: Code[20];
-    begin
-        foreach BatchName in JnlBatchNames do
-            StartGenJnlBackgroundPostingSession(BatchName);
-    end;
-
-    local procedure StartGenJnlBackgroundPostingSession(JnlBatchName: Code[20])
-    var
-        GenJournalBatch: Record "Gen. Journal Batch";
-        SessionId: Integer;
-    begin
-        GenJournalBatch.Get(TestDataGenerator.GetGeneralJournalTemplateName(), JnlBatchName);
-        StartSession(SessionId, Codeunit::"BCB Gen. Jnl. Parallel Post", CompanyName, GenJournalBatch);
-    end;
-
     procedure RunItemJnlParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerSession: Integer)
     var
+        BackgroundPostingTest: Interface "BCB Background Posting Test";
         JnlBatchNames: List of [Code[20]];
     begin
         ClearParallelTestResult(TestCode);
         InitializeItemJnlParallelPostingTest(JnlBatchNames, NoOfSessions, LinesPerSession);
         Commit();
 
-        StartItemJnlPostingTasks(JnlBatchNames);
+        BackgroundPostingTest := Enum::"BCB Background Posting Test"::"Post General Journal";
+        RunBackgroundPostingTestIterations(BackgroundPostingTest, JnlBatchNames, TestCode);
     end;
 
     local procedure InitializeItemJnlParallelPostingTest(var JnlBatchNames: List of [Code[20]]; NoOfSessions: Integer; LinesPerSession: Integer)
@@ -140,32 +128,17 @@ codeunit 57802 "BCB Perf. Bench Tests"
         end;
     end;
 
-    local procedure StartItemJnlPostingTasks(JnlBatchNames: List of [Code[20]])
-    var
-        BatchName: Code[20];
-    begin
-        foreach BatchName in JnlBatchNames do
-            StartItemJnlBackgroundPostingSession(BatchName);
-    end;
-
-    local procedure StartItemJnlBackgroundPostingSession(JnlBatchName: Code[20])
-    var
-        ItemJournalBatch: Record "Item Journal Batch";
-        SessionId: Integer;
-    begin
-        ItemJournalBatch.Get(TestDataGenerator.GetItemJournalTemplateName(), JnlBatchName);
-        StartSession(SessionId, Codeunit::"BCB Item Jnl. Parallel Post", CompanyName, ItemJournalBatch);
-    end;
-
     procedure RunSOParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerOrder: Integer)
     var
+        BackgroundPostingTest: Interface "BCB Background Posting Test";
         DocumentNos: List of [Code[20]];
     begin
         ClearParallelTestResult(TestCode);
         InitializeSalesOrderParallelPostingTest(DocumentNos, NoOfSessions, LinesPerOrder);
         Commit();
 
-        StartSalesOrderPostingTasks(DocumentNos);
+        BackgroundPostingTest := Enum::"BCB Background Posting Test"::"Post Sales Order";
+        RunBackgroundPostingTestIterations(BackgroundPostingTest, DocumentNos, TestCode);
     end;
 
     procedure InitializeSalesOrderParallelPostingTest(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
@@ -180,32 +153,37 @@ codeunit 57802 "BCB Perf. Bench Tests"
             DocumentNos.Add(TestDataGenerator.CreateSalesOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
     end;
 
-    local procedure StartSalesOrderPostingTasks(DocumentNos: List of [Code[20]])
-    var
-        DocNo: Code[20];
-    begin
-        foreach DocNo in DocumentNos do
-            StartSalesOrderBackgroundPostingSession(DocNo);
-    end;
-
-    local procedure StartSalesOrderBackgroundPostingSession(DocumentNo: Code[20])
-    var
-        SalesHeader: Record "Sales Header";
-        SessionId: Integer;
-    begin
-        SalesHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
-        StartSession(SessionId, Codeunit::"BCB SO Parallel Post", CompanyName, SalesHeader);
-    end;
-
     procedure RunPOParallelPostingTest(TestCode: Code[20]; NoOfSessions: Integer; LinesPerOrder: Integer)
     var
+        BackgroundPostingTest: Interface "BCB Background Posting Test";
         DocumentNos: List of [Code[20]];
     begin
         ClearParallelTestResult(TestCode);
         InitializePurchaseOrderParallelPostingTest(DocumentNos, NoOfSessions, LinesPerOrder);
         Commit();
 
-        StartPurchaseOrderPostingTasks(DocumentNos);
+        BackgroundPostingTest := Enum::"BCB Background Posting Test"::"Post Purchase Order";
+        RunBackgroundPostingTestIterations(BackgroundPostingTest, DocumentNos, TestCode);
+        RunBackgroundPostingTestIterations(BackgroundPostingTest, DocumentNos, TestCode);
+    end;
+
+    procedure InitializeSessionPostingEntityParam(
+        var BackgrounPostingParam: Record "BCB Background Posting Params";
+        TestCode: Code[20];
+        IterationNo: Integer;
+        SessionNo: Integer;
+        EntityRecId: RecordId)
+    begin
+        BackgrounPostingParam.SetRange("Test Code", TestCode);
+        BackgrounPostingParam.SetRange("Iteration No.", IterationNo);
+        BackgrounPostingParam.SetRange("Session No.", SessionNo);
+        BackgrounPostingParam.DeleteAll();
+
+        BackgrounPostingParam."Test Code" := TestCode;
+        BackgrounPostingParam."Iteration No." := IterationNo;
+        BackgrounPostingParam."Session No." := SessionNo;
+        BackgrounPostingParam."Entity Record ID" := EntityRecId;
+        BackgrounPostingParam.Insert();
     end;
 
     procedure InitializePurchaseOrderParallelPostingTest(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
@@ -220,21 +198,35 @@ codeunit 57802 "BCB Perf. Bench Tests"
             DocumentNos.Add(TestDataGenerator.CreatePurchaseOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
     end;
 
-    local procedure StartPurchaseOrderPostingTasks(DocumentNos: List of [Code[20]])
+    local procedure RunBackgroundPostingTestIterations(
+        BackgroundPostingTest: Interface "BCB Background Posting Test";
+        EntityNames: List of [Code[20]];
+        TestCode: Code[20])
     var
-        DocNo: Code[20];
+        PostingSessionIds: List of [Integer];
+        I: Integer;
     begin
-        foreach DocNo in DocumentNos do
-            StartPurchaseOrderBackgroundPostingSession(DocNo);
+        for I := 1 to 10 do begin
+            while IsTestActive(PostingSessionIds) do
+                Sleep(2000);
+
+            PostingSessionIds := BackgroundPostingTest.StartSessions(EntityNames, TestCode, I);
+        end;
     end;
 
-    local procedure StartPurchaseOrderBackgroundPostingSession(DocumentNo: Code[20])
+    local procedure IsTestActive(TestSessionIds: List of [Integer]): Boolean
     var
-        PurchaseHeader: Record "Purchase Header";
-        SessionId: Integer;
+        ActiveSession: Record "Active Session";
+        SessionFilter: Text;
+        PostingSessionId: Integer;
     begin
-        PurchaseHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
-        StartSession(SessionId, Codeunit::"BCB PO Parallel Post", CompanyName, PurchaseHeader);
+        foreach PostingSessionId in TestSessionIds do
+            SessionFilter := SessionFilter + Format(PostingSessionId) + '|';
+        SessionFilter := DelChr(SessionFilter, '>', '|');
+
+        ActiveSession.SetRange("Server Instance ID", ServiceInstanceId());
+        ActiveSession.SetFilter("Session ID", SessionFilter);
+        exit(not ActiveSession.IsEmpty());
     end;
 
     var

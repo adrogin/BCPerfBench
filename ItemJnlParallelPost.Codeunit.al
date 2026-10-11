@@ -1,21 +1,23 @@
 codeunit 57811 "BCB Item Jnl. Parallel Post"
 {
-    TableNo = "Item Journal Batch";
+    TableNo = "BCB Background Posting Params";
 
     trigger OnRun()
     var
+        ItemJournalBatch: Record "Item Journal Batch";
         ItemJournalLine: Record "Item Journal Line";
         PerfBenchTests: Codeunit "BCB Perf. Bench Tests";
         IsSuccess: Boolean;
         StartTime: Time;
     begin
-        ItemJournalLine.SetRange("Journal Template Name", Rec."Journal Template Name");
-        ItemJournalLine.SetRange("Journal Batch Name", Rec.Name);
+        Rec."Entity Record ID".GetRecord().SetTable(ItemJournalBatch);
+        ItemJournalLine.SetRange("Journal Template Name", ItemJournalBatch."Journal Template Name");
+        ItemJournalLine.SetRange("Journal Batch Name", ItemJournalBatch.Name);
         ItemJournalLine.FindFirst();
 
         StartTime := Time();
         IsSuccess := Codeunit.Run(Codeunit::"BCB Item Jnl. Posting - Run", ItemJournalLine);
 
-        PerfBenchTests.SaveParallelSessionResult('ITEMJ_PARALLEL_POST', 1, StartTime, Time(), IsSuccess);
+        PerfBenchTests.SaveParallelSessionResult('ITEMJ_PARALLEL_POST', Rec."Iteration No.", StartTime, Time(), IsSuccess);
     end;
 }
