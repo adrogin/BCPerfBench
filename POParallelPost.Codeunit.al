@@ -10,9 +10,10 @@ codeunit 57813 "BCB PO Parallel Post"
         StartTime: Time;
     begin
         Rec."Entity Record ID".GetRecord().SetTable(PurchaseHeader);
+        PurchaseHeader.Find();
         StartTime := Time();
         IsSuccess := Codeunit.Run(Codeunit::"BCB Purch. Order Posting - Run", PurchaseHeader);
 
-        PerfBenchTests.SaveParallelSessionResult('PO_PARALLEL_POST', Rec."Iteration No.", StartTime, Time(), IsSuccess);
+        PerfBenchTests.SaveParallelSessionResult(Rec."Test Code", Rec."Iteration No.", StartTime, Time(), IsSuccess);
     end;
 }

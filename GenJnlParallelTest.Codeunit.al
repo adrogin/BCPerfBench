@@ -1,5 +1,20 @@
 codeunit 57816 "BCB Gen. Jnl. Parallel Test" implements "BCB Background Posting Test"
 {
+    procedure Initialize(var JnlBatchNames: List of [Code[20]]; NoOfSessions: Integer; LinesPerSession: Integer)
+    var
+        I: Integer;
+        JnlBatchName: Code[10];
+    begin
+        TestDataGenerator.CreateGenJnlDocNoSeriesIfNotExists();
+
+        for I := 1 to NoOfSessions do begin
+            JnlBatchName := 'BGPOST' + Format(I).PadLeft(4, '0');
+            TestDataGenerator.DeleteGenJournalLines(JnlBatchName);
+            TestDataGenerator.CreateGenJournalLines(LinesPerSession, JnlBatchName);
+            JnlBatchNames.Add(JnlBatchName);
+        end;
+    end;
+
     procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
     begin
         exit(StartGenJnlPostingTasks(EntityCodes, TestCode, IterationNo));
@@ -20,7 +35,6 @@ codeunit 57816 "BCB Gen. Jnl. Parallel Test" implements "BCB Background Posting 
     var
         GenJournalBatch: Record "Gen. Journal Batch";
         BackgroundPostingParam: Record "BCB Background Posting Params";
-        TestDataGenerator: Codeunit "BCB Test Data Generator";
         PerfBenchTests: Codeunit "BCB Perf. Bench Tests";
         SessionId: Integer;
     begin
@@ -29,4 +43,7 @@ codeunit 57816 "BCB Gen. Jnl. Parallel Test" implements "BCB Background Posting 
         StartSession(SessionId, Codeunit::"BCB Gen. Jnl. Parallel Post", CompanyName, BackgroundPostingParam);
         exit(SessionId);
     end;
+
+    var
+        TestDataGenerator: Codeunit "BCB Test Data Generator";
 }

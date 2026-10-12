@@ -1,5 +1,18 @@
 codeunit 57814 "BCB SO Parallel Posting Test" implements "BCB Background Posting Test"
 {
+    procedure Initialize(var DocumentNos: List of [Code[20]]; NoOfSessions: Integer; LinesPerOrder: Integer)
+    var
+        Item: Record Item;
+        TestDataGenerator: Codeunit "BCB Test Data Generator";
+        I: Integer;
+        ItemsInBatch: Integer;
+    begin
+        ItemsInBatch := Round(Item.Count() / NoOfSessions, 1, '<');
+
+        for I := 1 to NoOfSessions do
+            DocumentNos.Add(TestDataGenerator.CreateSalesOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
+    end;
+
     procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
     begin
         StartSalesOrderPostingTasks(EntityCodes, TestCode, IterationNo);
@@ -25,7 +38,7 @@ codeunit 57814 "BCB SO Parallel Posting Test" implements "BCB Background Posting
     begin
         SalesHeader.Get(Enum::"Sales Document Type"::Order, DocumentNo);
         PerfBenchTests.InitializeSessionPostingEntityParam(BackgroundPostingParam, TestCode, IterationNo, SessionNo, SalesHeader.RecordId);
-        StartSession(SessionId, Codeunit::"BCB SO Parallel Post", CompanyName, SalesHeader);
+        StartSession(SessionId, Codeunit::"BCB SO Parallel Post", CompanyName, BackgroundPostingParam);
         exit(SessionId);
     end;
 }

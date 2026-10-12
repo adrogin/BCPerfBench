@@ -18,6 +18,6 @@ codeunit 57810 "BCB Gen. Jnl. Parallel Post"
         StartTime := Time();
         IsSuccess := Codeunit.Run(Codeunit::"BCB Gen. Jnl. Posting - Run", GenJournalLine);
 
-        PerfBenchTests.SaveParallelSessionResult('GENJNL_PARALLEL_POST', Rec."Iteration No.", StartTime, Time(), IsSuccess);
+        PerfBenchTests.SaveParallelSessionResult(Rec."Test Code", Rec."Iteration No.", StartTime, Time(), IsSuccess);
     end;
 }
