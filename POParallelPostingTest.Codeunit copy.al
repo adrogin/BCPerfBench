@@ -15,7 +15,7 @@ codeunit 57815 "BCB PO Parallel Posting Test" implements "BCB Background Posting
 
     procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
     begin
-        StartPurchaseOrderPostingTasks(EntityCodes, TestCode, IterationNo);
+        exit(StartPurchaseOrderPostingTasks(EntityCodes, TestCode, IterationNo));
     end;
 
     local procedure StartPurchaseOrderPostingTasks(DocumentNos: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
