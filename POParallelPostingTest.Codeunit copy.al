@@ -13,20 +13,17 @@ codeunit 57815 "BCB PO Parallel Posting Test" implements "BCB Background Posting
             DocumentNos.Add(TestDataGenerator.CreatePurchaseOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
     end;
 
-    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     begin
-        StartPurchaseOrderPostingTasks(EntityCodes, TestCode, IterationNo);
+        StartPurchaseOrderPostingTasks(EntityCodes, TestCode, IterationNo, SessionIds);
     end;
 
-    local procedure StartPurchaseOrderPostingTasks(DocumentNos: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    local procedure StartPurchaseOrderPostingTasks(DocumentNos: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     var
         DocNo: Integer;
-        SessionIds: List of [Integer];
     begin
         for DocNo := 1 to DocumentNos.Count do
             SessionIds.Add(StartPurchaseOrderBackgroundPostingSession(DocumentNos.Get(DocNo), TestCode, IterationNo, DocNo));
-
-        exit(SessionIds);
     end;
 
     local procedure StartPurchaseOrderBackgroundPostingSession(DocumentNo: Code[20]; TestCode: Code[20]; IterationNo: Integer; SessionNo: Integer): Integer

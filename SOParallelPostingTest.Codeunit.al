@@ -13,20 +13,17 @@ codeunit 57814 "BCB SO Parallel Posting Test" implements "BCB Background Posting
             DocumentNos.Add(TestDataGenerator.CreateSalesOrder(LinesPerOrder, (I - 1) * ItemsInBatch + 1, I * ItemsInBatch));
     end;
 
-    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     begin
-        StartSalesOrderPostingTasks(EntityCodes, TestCode, IterationNo);
+        StartSalesOrderPostingTasks(EntityCodes, TestCode, IterationNo, SessionIds);
     end;
 
-    local procedure StartSalesOrderPostingTasks(DocumentNos: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    local procedure StartSalesOrderPostingTasks(DocumentNos: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     var
         DocNo: Integer;
-        SessionIds: List of [Integer];
     begin
         for DocNo := 1 to DocumentNos.Count do
             SessionIds.Add(StartSalesOrderBackgroundPostingSession(DocumentNos.Get(DocNo), TestCode, IterationNo, DocNo));
-
-        exit(SessionIds);
     end;
 
     local procedure StartSalesOrderBackgroundPostingSession(DocumentNo: Code[20]; TestCode: Code[20]; IterationNo: Integer; SessionNo: Integer): Integer

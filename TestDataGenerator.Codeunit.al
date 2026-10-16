@@ -62,7 +62,7 @@ codeunit 57803 "BCB Test Data Generator"
         GenJournalLine.Validate("Document No.", DocumentNo);
         GenJournalLine.Validate("Posting Date", WorkDate());
         GenJournalLine.Validate("Account Type", Enum::"Gen. Journal Account Type"::"G/L Account");
-        GenJournalLine.Validate("Account No.", SelectRandomGLAccount(TempGLAccount, true, Enum::"General Posting Type"::" "));
+        GenJournalLine.Validate("Account No.", SelectRandomGLAccount(TempGLAccount, true, GenJournalLine."General Posting Type"::" "));
 
         GenJournalLine.Validate(Amount, Amount);
         GenJournalLine.Insert(true);
@@ -113,9 +113,11 @@ codeunit 57803 "BCB Test Data Generator"
 
     local procedure GetGenJnlDocumentNo(): Code[20]
     var
-        NoSeries: Codeunit "No. Series";
+        NoSeriesMgt: Codeunit NoSeriesManagement;
+    // NoSeries: Codeunit "No. Series";
     begin
-        exit(NoSeries.GetNextNo(GetGenJnlDocNoSeriesCode()));
+        exit(NoSeriesMgt.GetNextNo(GetGenJnlDocNoSeriesCode(), WorkDate(), true));
+    // exit(NoSeries.GetNextNo(GetGenJnlDocNoSeriesCode()));
     end;
 
     procedure CreateItemJnlBatch(BatchName: Code[10])
@@ -169,7 +171,7 @@ codeunit 57803 "BCB Test Data Generator"
         ItemJournalLine.Validate("Journal Template Name", GetItemJournalTemplateName());
         ItemJournalLine.Validate("Journal Batch Name", JnlBatchName);
         ItemJournalLine.Validate("Line No.", LineNo);
-        ItemJournalLine.Validate("Entry Type", Enum::"Item Journal Entry Type"::Purchase);
+        ItemJournalLine.Validate("Entry Type", ItemJournalLine."Entry Type"::Purchase);
         ItemJournalLine.Validate("Document Type", Enum::"Item Ledger Document Type"::"Purchase Receipt");
         ItemJournalLine.Validate("Document No.", DocumentNo);
         ItemJournalLine.Validate("Item No.", SelectRandomItem(TempItem, MinItemIndex, MaxItemIndex));
@@ -224,9 +226,11 @@ codeunit 57803 "BCB Test Data Generator"
 
     local procedure GetItemJnlDocumentNo(): Code[20]
     var
-        NoSeries: Codeunit "No. Series";
+        NoSeriesMgt: Codeunit NoSeriesManagement;
+    // NoSeries: Codeunit "No. Series";
     begin
-        exit(NoSeries.GetNextNo(GetItemJnlDocNoSeriesCode()));
+        exit(NoSeriesMgt.GetNextNo(GetItemJnlDocNoSeriesCode(), WorkDate(), true));
+    // exit(NoSeries.GetNextNo(GetItemJnlDocNoSeriesCode()));
     end;
 
     procedure CreateSalesOrder(LinesCount: Integer): Code[20]
@@ -266,7 +270,12 @@ codeunit 57803 "BCB Test Data Generator"
         CreateSalesLine(SalesHeader, LineNo, TempItem, 0, 0);
     end;
 
-    procedure CreateSalesLine(SalesHeader: Record "Sales Header"; LineNo: Integer; var TempItem: Record Item temporary; MinItemIndex: Integer; MaxItemIndex: Integer)
+    procedure CreateSalesLine(
+        SalesHeader: Record "Sales Header";
+        LineNo: Integer;
+        var TempItem: Record Item temporary;
+        MinItemIndex: Integer;
+        MaxItemIndex: Integer)
     var
         SalesLine: Record "Sales Line";
     begin
@@ -328,7 +337,12 @@ codeunit 57803 "BCB Test Data Generator"
         CreatePurchaseLine(PurchaseHeader, LineNo, TempItem, 0, 0);
     end;
 
-    procedure CreatePurchaseLine(PurchaseHeader: Record "Purchase Header"; LineNo: Integer; var TempItem: Record Item temporary; MinItemIndex: Integer; MaxItemIndex: Integer)
+    procedure CreatePurchaseLine(
+        PurchaseHeader: Record "Purchase Header";
+        LineNo: Integer;
+        var TempItem: Record Item temporary;
+        MinItemIndex: Integer;
+        MaxItemIndex: Integer)
     var
         PurchaseLine: Record "Purchase Line";
     begin
@@ -475,7 +489,7 @@ codeunit 57803 "BCB Test Data Generator"
     begin
         InventorySetup.Get();
         InventorySetup.Validate("Automatic Cost Posting", true);
-        InventorySetup.Validate("Automatic Cost Adjustment", Enum::"Automatic Cost Adjustment Type"::Never);
+        InventorySetup.Validate("Automatic Cost Adjustment", InventorySetup."Automatic Cost Adjustment"::Never);
         InventorySetup.Modify();
     end;
 
@@ -488,7 +502,9 @@ codeunit 57803 "BCB Test Data Generator"
     begin
         for I := 1 to NoOfItems do begin
             Clear(Item);
-            ItemTemplMgt.CreateItemFromTemplate(Item, IsHandled, 'ITEM');
+
+            CreateItemFromTemplate(Item, 'ITEM');
+        // ItemTemplMgt.CreateItemFromTemplate(Item, IsHandled, 'ITEM');
         end;
     end;
 
@@ -502,5 +518,44 @@ codeunit 57803 "BCB Test Data Generator"
                 Customer.Validate("Credit Limit (LCY)", 0);
                 Customer.Modify(true);
             until Customer.Next() = 0;
+    end;
+
+    procedure GetNoSeriesLastNoUsed(NoSeriesCode: Code[20]): Code[20]
+    var
+        NoSeriesLine: Record "No. Series Line";
+    // NoSeries: Codeunit "No. Series";
+    begin
+        FindNoSeriesLine(NoSeriesLine, NoSeriesCode);
+        exit(NoSeriesLine.GetLastNoUsed());
+    // exit(NoSeries.GetLastNoUsed(NoSeriesCode));
+    end;
+
+    procedure CreateItemFromTemplate(var Item: Record Item; TemplateCode: Code[20]) Result: Boolean
+    var
+        ItemTempl: Record "Item Templ.";
+        ItemTemplMgt: Codeunit "Item Templ. Mgt.";
+        // NoSeriesManagement: Codeunit NoSeriesManagement;
+        IsHandled: Boolean;
+    begin
+        ItemTempl.Get(TemplateCode);
+        Item.Init();
+
+        // NoSeriesManagement.InitSeries(ItemTempl."No. Series", '', 0D, Item."No.", Item."No. Series");
+        Item.Insert(true);
+
+        // ItemTemplMgt.ApplyItemTemplate(Item, ItemTempl, true);
+        // ItemTemplMgt.ApplyItemTemplate(Item, ItemTempl);
+        ItemTemplMgt.CreateItemFromTemplate(Item, IsHandled);
+        exit(true);
+    end;
+
+    local procedure FindNoSeriesLine(var NoSeriesLine: Record "No. Series Line"; NoSeriesCode: Code[20])
+    var
+        NoSeriesMgt: Codeunit NoSeriesManagement;
+    begin
+        NoSeriesLine.SetRange("Series Code", NoSeriesCode);
+        NoSeriesLine.SetRange(Open, true);
+        NoSeriesLine.FindLast();
+    // NoSeriesMgt.FindNoSeriesLine(NoSeriesLine, NoSeriesCode, WorkDate());
     end;
 }

@@ -18,20 +18,17 @@ codeunit 57817 "BCB Item Jnl. Parallel Test" implements "BCB Background Posting 
         end;
     end;
 
-    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     begin
-        exit(StartItemJnlPostingTasks(EntityCodes, TestCode, IterationNo));
+        StartItemJnlPostingTasks(EntityCodes, TestCode, IterationNo, SessionIds);
     end;
 
-    local procedure StartItemJnlPostingTasks(JnlBatchNames: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    local procedure StartItemJnlPostingTasks(JnlBatchNames: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     var
         BatchNo: Integer;
-        SessionIds: List of [Integer];
     begin
         for BatchNo := 1 to JnlBatchNames.Count do
             SessionIds.Add(StartItemJnlBackgroundPostingSession(JnlBatchNames.Get(BatchNo), TestCode, IterationNo, BatchNo));
-
-        exit(SessionIds);
     end;
 
     local procedure StartItemJnlBackgroundPostingSession(ItemBatchName: Code[20]; TestCode: Code[20]; IterationNo: Integer; SessionNo: Integer): Integer

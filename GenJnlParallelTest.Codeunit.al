@@ -15,20 +15,17 @@ codeunit 57816 "BCB Gen. Jnl. Parallel Test" implements "BCB Background Posting 
         end;
     end;
 
-    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    procedure StartSessions(EntityCodes: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     begin
-        exit(StartGenJnlPostingTasks(EntityCodes, TestCode, IterationNo));
+        StartGenJnlPostingTasks(EntityCodes, TestCode, IterationNo, SessionIds);
     end;
 
-    local procedure StartGenJnlPostingTasks(JnlBatchNames: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer): List of [Integer]
+    local procedure StartGenJnlPostingTasks(JnlBatchNames: List of [Code[20]]; TestCode: Code[20]; IterationNo: Integer; SessionIds: List of [Integer])
     var
         BatchNo: Integer;
-        SessionIds: List of [Integer];
     begin
         for BatchNo := 1 to JnlBatchNames.Count do
             SessionIds.Add(StartGenJnlBackgroundPostingSession(JnlBatchNames.Get(BatchNo), TestCode, IterationNo, BatchNo));
-
-        exit(SessionIds);
     end;
 
     local procedure StartGenJnlBackgroundPostingSession(JnlBatchName: Code[20]; TestCode: Code[20]; IterationNo: Integer; SessionNo: Integer): Integer

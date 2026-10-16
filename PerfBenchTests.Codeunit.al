@@ -139,7 +139,7 @@ codeunit 57802 "BCB Perf. Bench Tests"
             Clear(EntityNames);
             BackgroundPostingTest.Initialize(EntityNames, NoOfSessions, LinesPerSession);
             Commit();
-            PostingSessionIds := BackgroundPostingTest.StartSessions(EntityNames, TestCode, I);
+            BackgroundPostingTest.StartSessions(EntityNames, TestCode, I, PostingSessionIds);
         end;
     end;
 
